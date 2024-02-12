@@ -13,6 +13,7 @@ import { SignInDto } from './dto/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
 import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
+import { ActiveUserData } from '../interfaces/active-user-data.interface';
 
 @Injectable()
 export class AuthenticationService {
@@ -56,20 +57,32 @@ export class AuthenticationService {
     if (!isEqual) {
       throw new UnauthorizedException('Password does not match');
     }
-    const accessToken = await this.jwtService.signAsync(
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signToken<Partial<ActiveUserData>>(
+        user.id,
+        this.jwtConfiguration.accessTokenTtl,
+        { email: user.email },
+      ),
+      this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl),
+    ]);
+    return {
+      accessToken,
+      refreshToken
+    };
+  }
+
+  private async signToken<T>(userId: number, expiresIn: number, payload?: T) {
+    return await this.jwtService.signAsync(
       {
-        sub: user.id,
-        email: user.email,
+        sub: userId,
+        ...payload,
       },
       {
         audience: this.jwtConfiguration.audience,
         issuer: this.jwtConfiguration.issuer,
         secret: this.jwtConfiguration.secret,
-        expiresIn: this.jwtConfiguration.accessTokenTtl,
+        expiresIn
       },
     );
-    return {
-      accessToken,
-    };
   }
 }
