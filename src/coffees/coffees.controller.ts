@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { CoffeesService } from './coffees.service';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+
 
 @Controller('coffees')
 export class CoffeesController {
@@ -13,7 +14,8 @@ export class CoffeesController {
   }
 
   @Get()
-  findAll() {
+  findAll(@Req() request) {
+    console.log(request.user);
     return this.coffeesService.findAll();
   }
 
